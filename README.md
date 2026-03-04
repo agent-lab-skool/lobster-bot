@@ -112,12 +112,31 @@ The bot:
 - Restarts automatically if it crashes or the server reboots
 - Auto-pulls updates from git every 5 minutes
 
-## Commands
+## Using the Bot
 
-- `/new` — Start a new conversation
-- `/usage` — Cost and token stats
-- `/status` — Session info
-- `/help` — Available commands
+Just message it on Telegram like you'd text a friend. It's Claude — it can do anything Claude can do, but through Telegram.
+
+**Things you can do:**
+- Ask it anything — it searches the web if it doesn't know
+- Send photos — it can see and describe images, read text in screenshots
+- Send documents — PDFs, code files, spreadsheets, whatever
+- Send voice messages — it receives the audio file
+- Ask it to remember things — it saves facts about you between conversations
+- Ask it to run commands on your server — it has full root access
+- Paste API keys or credentials — it'll save them wherever you need
+- Ask it to install software, edit configs, set up services on your VPS
+
+**Commands:**
+- `/new` — Start a fresh conversation (clears session context)
+- `/usage` — See how much you've spent today and total
+- `/status` — Check current session ID
+- `/help` — List commands
+
+**Tips:**
+- If the bot seems confused or stuck on old context, send `/new` to reset
+- Long responses get split into chunks automatically (Telegram limit)
+- The bot remembers you across conversations via `memory/facts.md`
+- It keeps a daily log at `memory/daily/` — you can ask "what did we talk about yesterday?"
 
 ## Debugging
 
