@@ -1,0 +1,15 @@
+[Unit]
+Description=Lobsterbot Scheduler
+After=network.target
+
+[Service]
+Type=simple
+User=USER
+WorkingDirectory=/home/USER/lobsterbot
+ExecStart=/usr/bin/python3 -m core.scheduler
+Restart=always
+RestartSec=30
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

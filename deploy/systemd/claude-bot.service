@@ -1,0 +1,15 @@
+[Unit]
+Description=Lobsterbot Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+User=USER
+WorkingDirectory=/home/USER/lobsterbot
+ExecStart=/usr/bin/python3 run.py
+Restart=always
+RestartSec=10
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target
