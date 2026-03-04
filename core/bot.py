@@ -62,6 +62,15 @@ async def _process_and_respond(chat_id: int, text: str, context) -> None:
     if response.session_id:
         _sessions.set_session(chat_id, response.session_id)
 
+    # Track usage
+    usage = response.usage or {}
+    _sessions.log_usage(
+        chat_id,
+        cost_usd=response.cost_usd,
+        input_tokens=usage.get("input_tokens", 0),
+        output_tokens=usage.get("output_tokens", 0),
+    )
+
     await _send_response(chat_id, response.text, context)
 
 
@@ -189,10 +198,45 @@ async def handle_today(update: Update, context) -> None:
         await update.message.reply_text("No log for today yet.")
 
 
+async def handle_usage(update: Update, context) -> None:
+    user_id = update.effective_user.id
+
+    if not is_authorized(user_id, _config["telegram"]["allowed_users"]):
+        await update.message.reply_text("You are not authorized to use this bot.")
+        return
+
+    usage = _sessions.get_usage()
+    today = usage["today"]
+    total = usage["total"]
+
+    def _fmt_tokens(n: int) -> str:
+        if n >= 1_000_000:
+            return f"{n / 1_000_000:.1f}M"
+        if n >= 1_000:
+            return f"{n / 1_000:.1f}k"
+        return str(n)
+
+    lines = [
+        "📊 Usage Stats",
+        "",
+        "Today:",
+        f"  ${today['cost_usd']:.4f} spent",
+        f"  {today['messages']} messages",
+        f"  {_fmt_tokens(today['input_tokens'])} in / {_fmt_tokens(today['output_tokens'])} out",
+        "",
+        "All time:",
+        f"  ${total['cost_usd']:.4f} spent",
+        f"  {total['messages']} messages",
+        f"  {_fmt_tokens(total['input_tokens'])} in / {_fmt_tokens(total['output_tokens'])} out",
+    ]
+    await update.message.reply_text("\n".join(lines))
+
+
 async def handle_help(update: Update, context) -> None:
     await update.message.reply_text(
         "/new — Start a new conversation\n"
         "/status — Session info\n"
+        "/usage — Usage stats and costs\n"
         "/facts — Show saved facts about you\n"
         "/today — Show today's daily log\n"
         "/help — Show this message"
@@ -218,6 +262,7 @@ def main():
     # Commands
     app.add_handler(CommandHandler("new", handle_new))
     app.add_handler(CommandHandler("status", handle_status))
+    app.add_handler(CommandHandler("usage", handle_usage))
     app.add_handler(CommandHandler("facts", handle_facts))
     app.add_handler(CommandHandler("today", handle_today))
     app.add_handler(CommandHandler("help", handle_help))

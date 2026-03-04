@@ -7,6 +7,7 @@ from core.bot import (
     handle_new,
     handle_facts,
     handle_today,
+    handle_usage,
     handle_help,
     is_authorized,
 )
@@ -105,9 +106,31 @@ async def test_handle_today_no_log(mock_update, mock_context, tmp_path):
 
 
 @pytest.mark.asyncio
+async def test_handle_usage(mock_update, mock_context):
+    mock_sessions = MagicMock()
+    mock_sessions.get_usage.return_value = {
+        "today": {"cost_usd": 0.0123, "input_tokens": 5000, "output_tokens": 2000, "messages": 10},
+        "total": {"cost_usd": 0.4567, "input_tokens": 150000, "output_tokens": 60000, "messages": 200},
+    }
+
+    with (
+        patch("core.bot._config", {"telegram": {"allowed_users": [111]}}),
+        patch("core.bot._sessions", mock_sessions),
+    ):
+        await handle_usage(mock_update, mock_context)
+
+    msg = mock_update.message.reply_text.call_args[0][0]
+    assert "$0.0123" in msg
+    assert "$0.4567" in msg
+    assert "10 messages" in msg
+    assert "200 messages" in msg
+
+
+@pytest.mark.asyncio
 async def test_handle_help(mock_update, mock_context):
     await handle_help(mock_update, mock_context)
     msg = mock_update.message.reply_text.call_args[0][0]
     assert "/new" in msg
+    assert "/usage" in msg
     assert "/facts" in msg
     assert "/today" in msg

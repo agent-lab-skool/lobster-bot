@@ -24,6 +24,14 @@ class SessionManager:
                 created_at REAL NOT NULL,
                 archived_at REAL NOT NULL
             );
+            CREATE TABLE IF NOT EXISTS usage_log (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                chat_id INTEGER NOT NULL,
+                timestamp REAL NOT NULL,
+                cost_usd REAL NOT NULL DEFAULT 0,
+                input_tokens INTEGER NOT NULL DEFAULT 0,
+                output_tokens INTEGER NOT NULL DEFAULT 0
+            );
         """)
 
     def get_session(self, chat_id: int) -> str | None:
@@ -77,3 +85,55 @@ class SessionManager:
             (chat_id,),
         ).fetchall()
         return [dict(r) for r in rows]
+
+    def log_usage(self, chat_id: int, cost_usd: float, input_tokens: int, output_tokens: int):
+        self._db.execute(
+            "INSERT INTO usage_log (chat_id, timestamp, cost_usd, input_tokens, output_tokens) VALUES (?, ?, ?, ?, ?)",
+            (chat_id, time.time(), cost_usd, input_tokens, output_tokens),
+        )
+        self._db.commit()
+
+    def get_usage(self, chat_id: int | None = None) -> dict:
+        """Get usage stats. If chat_id is None, returns totals across all chats."""
+        from datetime import date, datetime
+
+        today_start = datetime.combine(date.today(), datetime.min.time()).timestamp()
+
+        where = "WHERE chat_id = ?" if chat_id is not None else ""
+        params_today = (today_start, chat_id) if chat_id else (today_start,)
+        params_all = (chat_id,) if chat_id else ()
+
+        # Today's usage
+        today = self._db.execute(
+            f"""SELECT COALESCE(SUM(cost_usd), 0) as cost,
+                       COALESCE(SUM(input_tokens), 0) as input_tok,
+                       COALESCE(SUM(output_tokens), 0) as output_tok,
+                       COUNT(*) as messages
+                FROM usage_log {where}{"AND" if where else "WHERE"} timestamp >= ?""",
+            params_today if not chat_id else (chat_id, today_start),
+        ).fetchone()
+
+        # All-time usage
+        total = self._db.execute(
+            f"""SELECT COALESCE(SUM(cost_usd), 0) as cost,
+                       COALESCE(SUM(input_tokens), 0) as input_tok,
+                       COALESCE(SUM(output_tokens), 0) as output_tok,
+                       COUNT(*) as messages
+                FROM usage_log {where}""",
+            params_all,
+        ).fetchone()
+
+        return {
+            "today": {
+                "cost_usd": today["cost"],
+                "input_tokens": today["input_tok"],
+                "output_tokens": today["output_tok"],
+                "messages": today["messages"],
+            },
+            "total": {
+                "cost_usd": total["cost"],
+                "input_tokens": total["input_tok"],
+                "output_tokens": total["output_tok"],
+                "messages": total["messages"],
+            },
+        }
