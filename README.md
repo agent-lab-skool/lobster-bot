@@ -2,14 +2,13 @@
 
 Your self-hosted AI assistant on Telegram. Powered by Claude Code.
 
-It browses the web, remembers your conversations, and runs 24/7 on your own server. Two env vars and you're live.
+It browses the web, remembers your conversations, and runs 24/7 on your own server.
 
-## Quick Start
+## Get Started
 
 ```bash
 git clone https://github.com/aflekkas/lobster-bot.git
 cd lobster-bot
-pip install -r requirements.txt
 ```
 
 Create a `.env`:
@@ -22,14 +21,16 @@ TELEGRAM_USER_IDS=your-telegram-user-id
 Run:
 
 ```bash
-source .env && python run.py
+python run.py
 ```
+
+That's it. The run script installs dependencies, sets up Playwright, loads your `.env`, and starts the bot.
 
 ## Setup
 
 1. Get a bot token — message [@BotFather](https://t.me/BotFather) on Telegram, send `/newbot`
 2. Get your user ID — message [@userinfobot](https://t.me/userinfobot)
-3. Put both in `.env` and run
+3. Put both in `.env`
 
 ## What It Can Do
 
@@ -39,18 +40,14 @@ source .env && python run.py
 - **Usage tracking** — know exactly what you're spending with `/usage`
 - **Auto-updates** — pulls from git every 5 minutes, push a change and it goes live
 
-## Deploy (VPS)
+## Deploy on a VPS
+
+SSH in, then:
 
 ```bash
 git clone https://github.com/aflekkas/lobster-bot.git ~/lobster-bot
 cd ~/lobster-bot
-pip install -r requirements.txt
-npx playwright install --with-deps chromium
-```
-
-Create your `.env`, then set up the service:
-
-```bash
+# create your .env with TELEGRAM_TOKEN and TELEGRAM_USER_IDS
 cp deploy/systemd/lobster-bot.service /etc/systemd/system/
 systemctl daemon-reload
 systemctl enable --now lobster-bot
@@ -59,8 +56,10 @@ systemctl enable --now lobster-bot
 ## Requirements
 
 - Python 3.11+
-- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) installed and authenticated
-- Node.js (for web browsing)
+- Node.js
+- [Claude Code CLI](https://docs.anthropic.com/en/docs/claude-code) — `npm i -g @anthropic-ai/claude-code`
+
+`run.py` handles installing everything else automatically.
 
 ---
 
