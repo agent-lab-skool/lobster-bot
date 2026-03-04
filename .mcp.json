@@ -3,7 +3,7 @@
     "playwright": {
       "command": "npx",
       "args": [
-        "@anthropic-ai/mcp-server-playwright@latest",
+        "@playwright/mcp@latest",
         "--headless"
       ]
     }
